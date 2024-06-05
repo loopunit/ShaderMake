@@ -758,9 +758,13 @@ bool Options::Parse(int32_t argc, const char** argv)
     }
 
     configFile = fs::path(cd) / fs::path(config);
+    configFile.make_preferred();
 
     for (fs::path& path : includeDirs)
+	{
         path = configFile.parent_path() / path;
+        path.make_preferred();
+    }
 
     return true;
 }
@@ -1113,7 +1117,10 @@ void DxcCompile()
         }
 
         // Compiling the shader
-        fs::path sourceFile = g_Options.configFile.parent_path() / g_Options.sourceDir / taskData.source;
+        fs::path taskSourceFile = taskData.source;
+        taskSourceFile.make_preferred();
+
+        fs::path sourceFile = g_Options.configFile.parent_path() / g_Options.sourceDir / taskSourceFile;
         wstring wsourceFile = sourceFile.wstring();
 
         ComPtr<IDxcBlob> codeBlob;
@@ -1734,6 +1741,9 @@ bool ProcessConfigLine(uint32_t lineIndex, const string& line, const fs::file_ti
     if (configLine.outputDir)
         outputDir /= configLine.outputDir;
 
+    outputDir.make_preferred();
+
+
     // Create intermediate output directories
     bool force = g_Options.force;
     fs::path endPath = outputDir / shaderName.parent_path();
@@ -1997,9 +2007,11 @@ int32_t main(int32_t argc, const char** argv)
             return 1;
     }
 
+
 #ifdef _WIN32
     // Setup a directory where to look for the compiler first
     fs::path compilerPath = fs::path(g_Options.compiler).parent_path();
+    compilerPath.make_preferred();
     SetDllDirectoryA(compilerPath.string().c_str());
     // This will still leave the launch folder as the first entry in the search path, so
     // try to explicitly load the appropriate DLL from the correct path
